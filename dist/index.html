@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#102c25">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="BiteLog">
+  <meta name="description" content="A straightforward calorie and macro tracker with barcode scanning.">
+  <title>BiteLog</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23102c25'/%3E%3Cpath d='M20 15v15c0 7 5 12 12 12s12-5 12-12V15M20 24h24M32 42v9' fill='none' stroke='%236de0ad' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="estimator.css">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+  <script src="app-v3.js" defer></script>
+  <link rel="stylesheet" href="basics.css">
+  <link rel="stylesheet" href="audit.css">
+</head>
+<body>
+  <main id="app">
+    <section class="view active" id="diary-view">
+      <header class="page-head"><div><p class="kicker" id="today-label">TODAY</p><h1>Food diary</h1></div><div class="date-controls"><button class="date-btn" id="prev-day" aria-label="Previous day">‹</button><button class="date-btn" id="next-day" aria-label="Next day">›</button></div></header>
+      <section class="summary-card" aria-label="Daily calories">
+        <div class="summary-main"><span id="remaining">2,400</span><small>calories remaining</small></div>
+        <div class="math-row"><span><b id="goal-cal">2,400</b><small>Goal</small></span><i>−</i><span><b id="food-cal">0</b><small>Food</small></span><i>=</i><span><b id="left-cal">2,400</b><small>Left</small></span></div>
+      </section>
+      <section class="macro-grid" id="macro-grid"></section>
+      <button id="target-prompt" class="target-prompt" hidden><span><b>Calculate your targets</b><small>Get calories and macros based on your body and goal</small></span><i>›</i></button>
+      <section class="water-card"><div><small>WATER</small><strong><span id="water-count">0</span> / 8 cups</strong></div><div><button id="water-minus" aria-label="Remove water">−</button><button id="water-plus" aria-label="Add water">＋</button></div></section>
+      <section id="meal-list"></section>
+      <p class="footnote">Press and hold a food to remove it.</p>
+    </section>
+
+    <section class="view" id="saved-view"><header class="page-head"><div><p class="kicker">QUICK ADD</p><h1>Saved</h1></div></header><section class="panel"><h2>Save foods</h2><input id="saved-name" placeholder="Meal or recipe name"><label>Foods to save<select id="saved-source"><option value="Breakfast">Breakfast</option><option value="Lunch">Lunch</option><option value="Dinner">Dinner</option><option value="Snacks">Snacks</option><option value="all">Entire day as recipe</option></select></label><button id="save-foods" class="main-btn">Save selection</button></section><div id="saved-list"></div></section>
+
+    <section class="view" id="weight-view"><header class="page-head"><div><p class="kicker">PROGRESS</p><h1>Weight</h1></div></header><section class="panel"><h2>Log today’s weight</h2><label class="unit-input"><input id="weight-input" inputmode="decimal" placeholder="Weight"><span>lb</span></label><button id="save-weight" class="main-btn">Save weight</button></section><div id="weight-list"></div></section>
+
+    <section class="view" id="goals-view"><header class="page-head"><div><p class="kicker">YOUR PLAN</p><h1>Profile & goals</h1></div></header>
+      <section class="panel account-card"><div><p class="kicker">LOCAL PROFILE</p><h2 id="account-name">Your profile</h2><p id="account-email" class="calc-copy">Stored only on this device</p></div><button id="edit-account" class="soft-btn">Edit profile</button></section>
+      <section class="panel calculator"><div class="calc-heading"><div><p class="kicker">TARGET CALCULATOR</p><h2>Estimate what you need</h2></div><span class="calc-mark">⌁</span></div>
+        <p class="calc-copy">Start with this estimate, then adjust from your weight trend after 2–3 weeks.</p>
+        <div class="form-grid">
+          <label>Age<input id="profile-age" type="number" inputmode="numeric" min="15" max="100"></label>
+          <label>Sex<select id="profile-sex"><option value="male">Male</option><option value="female">Female</option></select></label>
+          <label>Height (ft)<input id="profile-feet" type="number" inputmode="numeric" min="4" max="8"></label>
+          <label>Extra inches<input id="profile-inches" type="number" inputmode="numeric" min="0" max="11"></label>
+        </div>
+        <label>Current weight (lb)<input id="profile-weight" type="number" inputmode="decimal" min="70" max="700"></label>
+        <label>Daily activity<select id="profile-activity"><option value="1.2">Mostly sitting, little exercise</option><option value="1.375">Light activity, 1–3 workouts/week</option><option value="1.55">Active, 3–5 workouts/week</option><option value="1.725">On my feet most of the day + training</option><option value="1.9">Very physical job + hard training</option></select></label>
+        <label>Goal pace<select id="profile-goal"><option value="-500">Lose 1 lb/week</option><option value="-250">Lose 0.5 lb/week</option><option value="0">Maintain weight</option><option value="125">Lean bulk — gain 0.25 lb/week</option><option value="250">Bulk — gain 0.5 lb/week</option></select></label>
+        <button id="calculate-targets" class="main-btn">Calculate my targets</button>
+        <div id="calculation-result" class="calc-result" hidden></div>
+      </section>
+      <h2 class="section-label">Current daily targets</h2><section class="panel goals" id="goals-form"></section>
+      <section class="panel data-panel"><h2>Your data</h2><p class="calc-copy">This prototype stores everything only in Safari on this device. Save a backup before clearing browser data or changing phones.</p><div class="button-pair"><button id="export-data" class="soft-btn">Download backup</button><label class="soft-btn file-btn">Restore backup<input id="import-data" type="file" accept="application/json"></label></div><button id="delete-all-data" class="delete-link">Delete all BiteLog data</button></section>
+      <section class="panel legal-panel"><h2>Accuracy & privacy</h2><p>Calorie targets are estimates, not medical advice. Packaged-food data comes from the community-maintained <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> database and may be incomplete or incorrect. Compare entries with the product label.</p><p>No profile or diary information is uploaded by BiteLog in this prototype. Food searches and barcode numbers are sent to Open Food Facts.</p></section><p class="footnote">You can change any target manually.</p></section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button class="nav-btn active" data-view="diary"><span>◉</span>Diary</button>
+    <button class="nav-btn" data-view="saved"><span>◇</span>Saved</button>
+    <button class="nav-btn" data-view="weight"><span>↗</span>Weight</button>
+    <button class="nav-btn" data-view="goals"><span>◎</span>Goals</button>
+  </nav>
+
+  <dialog id="add-dialog" class="sheet"><div class="sheet-inner"><div class="sheet-head"><div><p class="kicker">ADD FOOD</p><h2 id="add-title">Breakfast</h2></div><button class="close-btn" data-close="add-dialog">Done</button></div><div class="search-box"><input id="food-search" type="search" placeholder="Search foods and brands"><button id="search-button">Search</button></div><div id="search-status" class="search-status"></div><div id="search-results"></div><button id="scan-open" class="scan-btn"><span class="barcode-icon">▥</span><span><b>Scan barcode</b><small>Point your camera at the package</small></span><i>›</i></button><button id="manual-open" class="plain-row"><span><b>Enter food manually</b><small>Add the nutrition label yourself</small></span><i>›</i></button><div class="list-tabs"><button class="list-tab active" data-food-tab="recent">Recent</button><button class="list-tab" data-food-tab="favorites">Favorites</button></div><div id="recent-list"></div></div></dialog>
+
+  <dialog id="scanner-dialog" class="full-dialog"><div class="scanner-head"><button class="close-btn light" data-close="scanner-dialog">Cancel</button><strong>Scan barcode</strong><span></span></div><div id="reader"></div><p id="scan-status">Center the barcode inside the box</p></dialog>
+
+  <dialog id="food-dialog" class="sheet"><form id="food-form" class="sheet-inner"><div class="sheet-head"><div><p class="kicker">NEW FOOD</p><h2>Nutrition label</h2></div><button type="button" class="close-btn" data-close="food-dialog">Cancel</button></div><label>Food name<input name="name" required placeholder="Chicken breast"></label><label>Brand <small>(optional)</small><input name="brand" placeholder="Brand"></label><label>Serving size<input name="serving" value="1 serving" required></label><h3>Per serving</h3><div class="form-grid"><label>Calories<input name="calories" type="number" inputmode="decimal" required placeholder="0"></label><label>Protein (g)<input name="protein" type="number" inputmode="decimal" placeholder="0"></label><label>Carbs (g)<input name="carbs" type="number" inputmode="decimal" placeholder="0"></label><label>Fat (g)<input name="fat" type="number" inputmode="decimal" placeholder="0"></label></div><button class="main-btn" type="submit">Add food</button></form></dialog>
+
+  <dialog id="confirm-dialog" class="confirm"><h2>Remove this food?</h2><p id="confirm-name"></p><div class="button-pair"><button id="cancel-remove" class="soft-btn">Keep it</button><button id="confirm-remove" class="danger-btn">Remove</button></div></dialog>
+  <dialog id="entry-dialog" class="sheet"><form id="entry-form" class="sheet-inner"><div class="sheet-head"><div><p class="kicker">LOG FOOD</p><h2 id="entry-food-name">Food</h2></div><button type="button" class="close-btn" data-close="entry-dialog">Cancel</button></div><label>Servings<input id="entry-servings" type="number" min="0.1" step="0.1" inputmode="decimal" value="1"></label><label>Meal<select id="entry-meal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snacks</option></select></label><div id="entry-preview" class="entry-preview"></div><p id="entry-source-note" class="source-note"></p><label class="favorite-check"><input id="entry-favorite" type="checkbox"><span>Save as favorite</span></label><button class="main-btn" type="submit">Save to diary</button><button id="delete-entry" class="delete-link" type="button" hidden>Remove from diary</button></form></dialog>
+  <dialog id="account-dialog" class="sheet account-sheet"><form id="account-form" class="sheet-inner"><div class="sheet-head"><div><p class="kicker">WELCOME TO BITELOG</p><h2 id="account-form-title">Create your local profile</h2></div><button type="button" id="account-cancel" class="close-btn">Cancel</button></div><p class="calc-copy">This profile stays on this device and sets your starting calorie and macro goals.</p><label>Name<input id="account-input-name" required placeholder="Your name"></label><div class="form-grid"><label>Age<input id="account-age" type="number" inputmode="numeric" min="15" max="100" required></label><label>Sex used for equation<select id="account-sex"><option value="male">Male</option><option value="female">Female</option></select></label><label>Height (ft)<input id="account-feet" type="number" inputmode="numeric" min="4" max="8" required></label><label>Extra inches<input id="account-inches" type="number" inputmode="numeric" min="0" max="11" required></label></div><label>Current weight (lb)<input id="account-weight" type="number" inputmode="decimal" min="70" max="700" required></label><label>Goal weight (lb)<input id="account-goal-weight" type="number" inputmode="decimal" min="70" max="700" required></label><label>Daily activity<select id="account-activity"><option value="1.2">Mostly sitting, little exercise</option><option value="1.375">Light activity, 1–3 workouts/week</option><option value="1.55">Active, 3–5 workouts/week</option><option value="1.725">On my feet most of the day + training</option><option value="1.9">Very physical job + hard training</option></select></label><label>Goal pace<select id="account-goal"><option value="-500">Lose 1 lb/week</option><option value="-250">Lose 0.5 lb/week</option><option value="0">Maintain weight</option><option value="125">Lean bulk — gain 0.25 lb/week</option><option value="250">Bulk — gain 0.5 lb/week</option></select></label><button class="main-btn" type="submit">Save profile & calculate goals</button></form></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
